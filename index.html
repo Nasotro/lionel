@@ -149,8 +149,10 @@ function bfsFrom(src) {
 }
 var ADJ = buildAdj();
 var DIST = bfsFrom(IDX[GOAL]);
+var COMMON_SET = new Set(COMMON_RAW.trim().split(/\s+/));
 var CANDIDATES = [];
-for (var ci = 0; ci < WORDS.length; ci++) if (DIST[ci] >= 4) CANDIDATES.push(WORDS[ci]);
+for (var ci = 0; ci < WORDS.length; ci++)
+  if (DIST[ci] >= 4 && COMMON_SET.has(WORDS[ci])) CANDIDATES.push(WORDS[ci]);
 
 var now = new Date();
 var dayIndex = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
