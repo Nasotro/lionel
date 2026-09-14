@@ -3,7 +3,7 @@
 Jeu de mots quotidien : rejoins le mot **LION** en changeant une seule lettre à la fois.
 
 ## Règles
-- Chaque jour, un nouveau mot de départ (à distance minimale de 4 de LION)
+- Chaque jour, un nouveau mot de départ commun, à distance minimale de 4 de LION
 - Tape un mot de 4 lettres au clavier : il doit exister dans le dictionnaire et différer du mot précédent d'une seule lettre exactement
 - Chaque mot validé s'ajoute à la chaîne, enchaîne jusqu'à LION
 - Le score final compare ton nombre de coups au chemin optimal
@@ -19,5 +19,5 @@ Jeu de mots quotidien : rejoins le mot **LION** en changeant une seule lettre à
 - Clavier AZERTY à l'écran + support du clavier physique
 
 ## Dictionnaire
-2657 mots français de 4 lettres (source : listesdemots.net), sans accents (style Scrabble).
-Les mots de départ sont ceux à distance BFS >= 4 de LION (2442 éligibles).
+- Validation des propositions : 2657 mots français de 4 lettres (listesdemots.net), sans accents (style Scrabble), verbes conjugués inclus
+- Mots de départ : restreints aux mots courants du top 10 000 de fréquence (Wiktionary), filtrés par distance BFS >= 4 à LION (~300 candidats)
