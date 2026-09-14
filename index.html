@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>LIONEL — rejoins le lion 🦁</title>
+<style>
+:root { --bg:#0b1020; --panel:#11182c; --border:#2a3a5c; --text:#e6edf3; --gold:#fbbf24; }
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(circle at 50% 0%, #16204a 0%, var(--bg) 70%);
+  color: var(--text);
+  display:flex; flex-direction:column;
+  height:100vh; height:100dvh; overflow:hidden;
+  touch-action: manipulation; user-select:none;
+}
+header { text-align:center; padding:14px 12px 8px; }
+h1 { font-size:clamp(22px, 6vw, 34px); letter-spacing:.35em; font-weight:800; }
+h1 .lion { color:var(--gold); }
+.sub { font-size:13px; opacity:.65; margin-top:2px; }
+.dayline { font-size:12px; opacity:.5; margin-top:4px; }
+main { flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items:center; padding:8px 12px; }
+#board { display:flex; flex-direction:column; gap:8px; width:100%; max-width:330px; margin:auto 0; padding-bottom:8px; }
+.row { display:flex; gap:8px; justify-content:center; }
+.cell {
+  width:min(17vw, 58px); height:min(17vw, 58px);
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--border); border-radius:12px;
+  font-size:min(7.5vw, 26px); font-weight:800; text-transform:uppercase;
+  background:rgba(17,24,44,.5);
+}
+.row.done .cell { background:var(--panel); }
+.row.start .cell { border-color:rgba(59,130,246,.65); color:#93c5fd; }
+.row.active .cell { border-color:rgba(125,211,252,.4); }
+.row.active .cell.filled { border-color:#7dd3fc; background:#13203a; animation:pop .12s ease; }
+.row.shake { animation:shake .45s; }
+.row.flip .cell { animation:flip .5s ease both; }
+.row.lion .cell {
+  border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,.08);
+  box-shadow:0 0 18px rgba(251,191,36,.25);
+  animation:lionpop .6s cubic-bezier(.2,1.6,.4,1) both;
+}
+@keyframes pop { from { transform:scale(1.25); } to { transform:scale(1); } }
+@keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-6px)} 40%,60%{transform:translateX(6px)} }
+@keyframes flip { 0%{transform:rotateX(0)} 50%{transform:rotateX(90deg)} 100%{transform:rotateX(0)} }
+@keyframes lionpop { 0%{transform:scale(.3)} 60%{transform:scale(1.15)} 100%{transform:scale(1)} }
+#msg { min-height:22px; font-size:14px; text-align:center; padding:6px; color:#fca5a5; opacity:0; transition:opacity .2s; }
+#msg.show { opacity:1; }
+#msg.good { color:var(--gold); }
+#keyboard { padding:8px 6px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--bg) 30%); }
+.krow { display:flex; gap:5px; margin-bottom:6px; }
+.key {
+  flex:1; height:clamp(44px, 7.5vh, 56px);
+  background:var(--panel); border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-size:clamp(14px,3.5vw,17px); font-weight:700;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition: transform .05s, background .15s;
+}
+.key:active { transform:scale(.93); background:#1b2540; }
+.key.wide { flex:1.6; font-size:12px; }
+.key.enter { background:#166534; border-color:rgba(34,197,94,.4); }
+.key.back { background:#7c2d12; border-color:rgba(249,115,22,.4); }
+#fx { position:fixed; inset:0; pointer-events:none; z-index:50; }
+#winOverlay { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; background:rgba(5,8,18,.75); }
+#winOverlay.show { display:flex; }
+.winCard {
+  background:var(--panel); border:1px solid var(--gold); border-radius:20px;
+  padding:28px 30px; text-align:center; max-width:86vw;
+  animation:cardin .5s cubic-bezier(.2,1.4,.4,1) both;
+  box-shadow:0 0 60px rgba(251,191,36,.2);
+}
+@keyframes cardin { from { transform:scale(.5) translateY(40px); opacity:0; } to { transform:scale(1) translateY(0); opacity:1; } }
+.winCard h2 { font-size:28px; margin-bottom:4px; }
+.winCard .big { font-size:64px; line-height:1.15; margin:8px 0; animation:lionpop .7s .2s cubic-bezier(.2,1.6,.4,1) both; }
+.winCard p { font-size:15px; opacity:.85; margin-bottom:18px; }
+.btnRow { display:flex; gap:10px; justify-content:center; }
+button.btn { padding:11px 18px; border-radius:10px; border:none; font-weight:700; font-size:14px; cursor:pointer; }
+.btn.share { background:var(--gold); color:#1a1300; }
+.btn.ok { background:var(--border); color:var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <h1>LION<span class="lion">EL</span></h1>
+  <div class="sub">Rejoins le mot <b style="color:var(--gold)">LION</b> un mot à la fois</div>
+  <div class="dayline" id="dayline"></div>
+</header>
+<main id="main">
+  <div id="board"></div>
+  <div id="msg"></div>
+</main>
+<div id="keyboard"></div>
+<canvas id="fx"></canvas>
+<div id="winOverlay">
+  <div class="winCard">
+    <h2>Victoire !</h2>
+    <div class="big">🦁</div>
+    <p id="winText"></p>
+    <div class="btnRow">
+      <button class="btn share" onclick="share(this)">Partager</button>
+      <button class="btn ok" onclick="document.getElementById('winOverlay').classList.remove('show')">Fermer</button>
+    </div>
+  </div>
+</div>
+<script src="words.js"></script>
+<script>
+"use strict";
+var GOAL = "LION";
+var WORDS = DICT_RAW.trim().split(/\s+/).sort();
+var WORD_SET = new Set(WORDS);
+var IDX = {};
+for (var ii = 0; ii < WORDS.length; ii++) IDX[WORDS[ii]] = ii;
+
+function buildAdj() {
+  var buckets = {};
+  for (var i = 0; i < WORDS.length; i++) {
+    var w = WORDS[i];
+    for (var p = 0; p < 4; p++) {
+      var k = w.slice(0, p) + "*" + w.slice(p + 1);
+      if (!buckets[k]) buckets[k] = [];
+      buckets[k].push(i);
+    }
+  }
+  var adj = [];
+  for (var j = 0; j < WORDS.length; j++) adj.push([]);
+  for (var key in buckets) {
+    var b = buckets[key];
+    for (var a = 0; a < b.length; a++)
+      for (var c = a + 1; c < b.length; c++) {
+        adj[b[a]].push(b[c]);
+        adj[b[c]].push(b[a]);
+      }
+  }
+  return adj;
+}
+function bfsFrom(src) {
+  var dist = [];
+  for (var i = 0; i < WORDS.length; i++) dist.push(-1);
+  var q = [src]; dist[src] = 0;
+  while (q.length) {
+    var cur = q.shift();
+    var nbs = ADJ[cur];
+    for (var j = 0; j < nbs.length; j++)
+      if (dist[nbs[j]] < 0) { dist[nbs[j]] = dist[cur] + 1; q.push(nbs[j]); }
+  }
+  return dist;
+}
+var ADJ = buildAdj();
+var DIST = bfsFrom(IDX[GOAL]);
+var CANDIDATES = [];
+for (var ci = 0; ci < WORDS.length; ci++) if (DIST[ci] >= 4) CANDIDATES.push(WORDS[ci]);
+
+var now = new Date();
+var dayIndex = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+var dateKey = now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
+var START = CANDIDATES[dayIndex % CANDIDATES.length];
+var OPTIMAL = DIST[IDX[START]];
+
+var SAVE_KEY = "lionel-" + dateKey;
+var state = { chain: [START], won: false };
+try {
+  var saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+  if (saved && saved.chain && saved.chain.length && saved.chain[0] === START) state = saved;
+} catch (e) {}
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
+
+var guess = "";
+var board = document.getElementById("board");
+var mainEl = document.getElementById("main");
+var msgEl = document.getElementById("msg");
+var msgTimer = null;
+
+document.getElementById("dayline").textContent =
+  "Défi du " + pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() +
+  " · LION est à " + OPTIMAL + " mots";
+
+function hamming(a, b) { var d = 0; for (var i = 0; i < 4; i++) if (a[i] !== b[i]) d++; return d; }
+
+function rowEl(word, cls) {
+  var row = document.createElement("div");
+  row.className = "row " + cls;
+  for (var i = 0; i < 4; i++) {
+    var c = document.createElement("div");
+    c.className = "cell";
+    c.textContent = word[i];
+    row.appendChild(c);
+  }
+  return row;
+}
+function activeRowEl() {
+  var row = document.createElement("div");
+  row.className = "row active";
+  row.id = "activeRow";
+  for (var i = 0; i < 4; i++) {
+    var c = document.createElement("div");
+    c.className = "cell";
+    if (guess[i]) { c.textContent = guess[i]; c.classList.add("filled"); }
+    row.appendChild(c);
+  }
+  return row;
+}
+function render(animateLast) {
+  board.innerHTML = "";
+  for (var i = 0; i < state.chain.length; i++) {
+    var w = state.chain[i];
+    var cls = "done";
+    if (i === 0) cls += " start";
+    if (w === GOAL) cls += " lion";
+    var row = rowEl(w, cls);
+    if (animateLast && i === state.chain.length - 1 && state.chain.length > 1) {
+      row.classList.add("flip");
+      var cells = row.children;
+      for (var j = 0; j < 4; j++) cells[j].style.animationDelay = (j * 90) + "ms";
+    }
+    board.appendChild(row);
+  }
+  if (!state.won) board.appendChild(activeRowEl());
+  mainEl.scrollTop = mainEl.scrollHeight;
+}
+function refreshActive() {
+  var row = document.getElementById("activeRow");
+  if (!row) return;
+  var cells = row.children;
+  for (var i = 0; i < 4; i++) {
+    var c = cells[i];
+    if (guess[i]) { c.textContent = guess[i]; c.classList.add("filled"); }
+    else { c.textContent = ""; c.classList.remove("filled"); }
+  }
+}
+function type(l) {
+  if (state.won || guess.length >= 4) return;
+  guess += l;
+  refreshActive();
+}
+function erase() {
+  if (state.won || !guess.length) return;
+  guess = guess.slice(0, -1);
+  refreshActive();
+}
+function err(t) {
+  msgEl.textContent = t;
+  msgEl.classList.add("show");
+  var row = document.getElementById("activeRow");
+  if (row) { row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake"); }
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(function() { msgEl.classList.remove("show"); }, 2200);
+}
+function submit() {
+  if (state.won) return;
+  if (guess.length < 4) { err("Complète les 4 lettres"); return; }
+  if (!WORD_SET.has(guess)) { err("« " + guess + " » n'est pas dans le dictionnaire"); return; }
+  var last = state.chain[state.chain.length - 1];
+  if (hamming(guess, last) !== 1) { err("Une seule lettre doit changer"); return; }
+  var w = guess;
+  state.chain.push(w);
+  guess = "";
+  save();
+  if (w === GOAL) { render(false); win(); }
+  else render(true);
+}
+function win() {
+  state.won = true;
+  save();
+  confetti();
+  var steps = state.chain.length - 1;
+  document.getElementById("winText").textContent =
+    START + " → LION en " + steps + " coups · optimal : " + OPTIMAL;
+  setTimeout(function() { document.getElementById("winOverlay").classList.add("show"); }, 1000);
+}
+function share(btn) {
+  var steps = state.chain.length - 1;
+  var txt = "LIONEL 🦁 " + START + " → LION en " + steps + " coups (optimal " + OPTIMAL + ")";
+  function done() { btn.textContent = "Copié !"; setTimeout(function() { btn.textContent = "Partager"; }, 1500); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done, function() {});
+  }
+}
+function confetti() {
+  var c = document.getElementById("fx");
+  var ctx = c.getContext("2d");
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  var colors = ["#fbbf24", "#f59e0b", "#fde68a", "#ffffff", "#fb923c"];
+  var parts = [];
+  for (var i = 0; i < 140; i++) {
+    parts.push({
+      x: Math.random() * c.width, y: -20 - Math.random() * c.height * 0.6,
+      w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+      vy: 2 + Math.random() * 3, vx: -1.5 + Math.random() * 3,
+      r: Math.random() * Math.PI, vr: -0.2 + Math.random() * 0.4,
+      col: colors[i % colors.length]
+    });
+  }
+  var t0 = performance.now();
+  function frame(t) {
+    ctx.clearRect(0, 0, c.width, c.height);
+    var alive = false;
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vy += 0.03;
+      if (p.y < c.height + 30) alive = true;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.col; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    if (alive && t - t0 < 6000) requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, c.width, c.height);
+  }
+  requestAnimationFrame(frame);
+}
+
+var KROWS = [
+  ["A","Z","E","R","T","Y","U","I","O","P"],
+  ["Q","S","D","F","G","H","J","K","L","M"],
+  ["ENTER","W","X","C","V","B","N","BACK"]
+];
+var kb = document.getElementById("keyboard");
+KROWS.forEach(function(rowKeys) {
+  var r = document.createElement("div");
+  r.className = "krow";
+  rowKeys.forEach(function(k) {
+    var b = document.createElement("button");
+    b.className = "key";
+    if (k === "ENTER") { b.className = "key wide enter"; b.textContent = "ENTER"; b.onclick = submit; }
+    else if (k === "BACK") { b.className = "key wide back"; b.textContent = "⌫"; b.onclick = erase; }
+    else { b.textContent = k; b.onclick = function() { type(k); }; }
+    r.appendChild(b);
+  });
+  kb.appendChild(r);
+});
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") { submit(); return; }
+  if (e.key === "Backspace") { erase(); return; }
+  var l = e.key.toUpperCase();
+  if (/^[A-Z]$/.test(l) && l.length === 1) type(l);
+});
+setInterval(function() {
+  var d = new Date();
+  var dk = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  if (dk !== dateKey) location.reload();
+}, 30000);
+
+render(false);
+if (state.won) {
+  msgEl.textContent = "🦁 Trouvé en " + (state.chain.length - 1) + " coups ! Reviens demain.";
+  msgEl.classList.add("show", "good");
+}
+</script>
+</body>
+</html>
