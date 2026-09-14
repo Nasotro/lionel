@@ -35,6 +35,8 @@ main { flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items
 .row.start .cell { border-color:rgba(59,130,246,.65); color:#93c5fd; }
 .row.active .cell { border-color:rgba(125,211,252,.4); }
 .row.active .cell.filled { border-color:#7dd3fc; background:#13203a; animation:pop .12s ease; }
+.row .cell.hint { border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,.12); }
+.row.active .cell.filled.hint { border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,.15); }
 .row.shake { animation:shake .45s; }
 .row.flip .cell { animation:flip .5s ease both; }
 .row.lion .cell {
@@ -188,6 +190,7 @@ function rowEl(word, cls) {
     var c = document.createElement("div");
     c.className = "cell";
     c.textContent = word[i];
+    if (word[i] === GOAL[i]) c.classList.add("hint");
     row.appendChild(c);
   }
   return row;
@@ -199,7 +202,11 @@ function activeRowEl() {
   for (var i = 0; i < 4; i++) {
     var c = document.createElement("div");
     c.className = "cell";
-    if (guess[i]) { c.textContent = guess[i]; c.classList.add("filled"); }
+    if (guess[i]) {
+      c.textContent = guess[i];
+      c.classList.add("filled");
+      if (guess[i] === GOAL[i]) c.classList.add("hint");
+    }
     row.appendChild(c);
   }
   return row;
@@ -228,8 +235,15 @@ function refreshActive() {
   var cells = row.children;
   for (var i = 0; i < 4; i++) {
     var c = cells[i];
-    if (guess[i]) { c.textContent = guess[i]; c.classList.add("filled"); }
-    else { c.textContent = ""; c.classList.remove("filled"); }
+    if (guess[i]) {
+      c.textContent = guess[i];
+      c.classList.add("filled");
+      if (guess[i] === GOAL[i]) c.classList.add("hint");
+      else c.classList.remove("hint");
+    } else {
+      c.textContent = "";
+      c.classList.remove("filled", "hint");
+    }
   }
 }
 function type(l) {
