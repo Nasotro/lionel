@@ -6,6 +6,7 @@ Jeu de mots quotidien : rejoins le mot **LION** en changeant une seule lettre à
 - Chaque jour, un nouveau mot de départ commun, à distance minimale de 4 de LION
 - Tape un mot de 4 lettres au clavier : il doit exister dans le dictionnaire et différer du mot précédent d'une seule lettre exactement
 - Chaque mot validé s'ajoute à la chaîne, enchaîne jusqu'à LION
+- Les lettres à la bonne place (celles de LION) s'affichent en doré
 - Le score final compare ton nombre de coups au chemin optimal
 
 ## Jouer
