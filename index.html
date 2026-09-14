@@ -35,15 +35,12 @@ main { flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items
 .row.start .cell { border-color:rgba(59,130,246,.65); color:#93c5fd; }
 .row.active .cell { border-color:rgba(125,211,252,.4); }
 .row.active .cell.filled { border-color:#7dd3fc; background:#13203a; animation:pop .12s ease; }
-.row .cell.hint { border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,.12); }
-.row.active .cell.filled.hint { border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,.15); }
-.row.shake { animation:shake .45s; }
-.row.flip .cell { animation:flip .5s ease both; }
+.cell.hint { color:var(--gold); text-shadow:0 0 10px rgba(251,191,36,.5); }
 .row.lion .cell {
   border-color:var(--gold); color:var(--gold); background:rgba(251,191,36,.08);
-  box-shadow:0 0 18px rgba(251,191,36,.25);
-  animation:lionpop .6s cubic-bezier(.2,1.6,.4,1) both;
 }
+.row.shake { animation:shake .45s; }
+.row.flip .cell { animation:flip .5s ease both; }
 @keyframes pop { from { transform:scale(1.25); } to { transform:scale(1); } }
 @keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-6px)} 40%,60%{transform:translateX(6px)} }
 @keyframes flip { 0%{transform:rotateX(0)} 50%{transform:rotateX(90deg)} 100%{transform:rotateX(0)} }
@@ -58,7 +55,6 @@ main { flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items
   background:var(--panel); border:1px solid var(--border); border-radius:8px;
   color:var(--text); font-size:clamp(14px,3.5vw,17px); font-weight:700;
   display:flex; align-items:center; justify-content:center; cursor:pointer;
-  transition: transform .05s, background .15s;
 }
 .key:active { transform:scale(.93); background:#1b2540; }
 .key.wide { flex:1.6; font-size:12px; }
@@ -69,14 +65,15 @@ main { flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items
 #winOverlay.show { display:flex; }
 .winCard {
   background:var(--panel); border:1px solid var(--gold); border-radius:20px;
-  padding:28px 30px; text-align:center; max-width:86vw;
-  animation:cardin .5s cubic-bezier(.2,1.4,.4,1) both;
+  padding:28px 26px; text-align:center; max-width:min(92vw, 420px); margin:0 12px;
   box-shadow:0 0 60px rgba(251,191,36,.2);
+  animation:cardin .45s cubic-bezier(.2,1.4,.4,1) both;
 }
 @keyframes cardin { from { transform:scale(.5) translateY(40px); opacity:0; } to { transform:scale(1) translateY(0); opacity:1; } }
 .winCard h2 { font-size:28px; margin-bottom:4px; }
 .winCard .big { font-size:64px; line-height:1.15; margin:8px 0; animation:lionpop .7s .2s cubic-bezier(.2,1.6,.4,1) both; }
 .winCard p { font-size:15px; opacity:.85; margin-bottom:18px; }
+.winCard .optPath { font-size:13px; line-height:1.8; color:var(--gold); margin:-6px 0 18px; }
 .btnRow { display:flex; gap:10px; justify-content:center; }
 button.btn { padding:11px 18px; border-radius:10px; border:none; font-weight:700; font-size:14px; cursor:pointer; }
 .btn.share { background:var(--gold); color:#1a1300; }
@@ -100,6 +97,7 @@ button.btn { padding:11px 18px; border-radius:10px; border:none; font-weight:700
     <h2>Victoire !</h2>
     <div class="big">🦁</div>
     <p id="winText"></p>
+    <div class="optPath" id="optPath"></div>
     <div class="btnRow">
       <button class="btn share" onclick="share(this)">Partager</button>
       <button class="btn ok" onclick="document.getElementById('winOverlay').classList.remove('show')">Fermer</button>
@@ -113,26 +111,26 @@ var GOAL = "LION";
 var WORDS = DICT_RAW.trim().split(/\s+/).sort();
 var WORD_SET = new Set(WORDS);
 var IDX = {};
-for (var ii = 0; ii < WORDS.length; ii++) IDX[WORDS[ii]] = ii;
+WORDS.forEach(function(w, i) { IDX[w] = i; });
 
 function buildAdj() {
   var buckets = {};
   for (var i = 0; i < WORDS.length; i++) {
     var w = WORDS[i];
     for (var p = 0; p < 4; p++) {
-      var k = w.slice(0, p) + "*" + w.slice(p + 1);
-      if (!buckets[k]) buckets[k] = [];
-      buckets[k].push(i);
+      var key = w.slice(0, p) + "*" + w.slice(p + 1);
+      if (!buckets[key]) buckets[key] = [];
+      buckets[key].push(i);
     }
   }
   var adj = [];
-  for (var j = 0; j < WORDS.length; j++) adj.push([]);
-  for (var key in buckets) {
-    var b = buckets[key];
-    for (var a = 0; a < b.length; a++)
-      for (var c = a + 1; c < b.length; c++) {
-        adj[b[a]].push(b[c]);
-        adj[b[c]].push(b[a]);
+  for (var k = 0; k < WORDS.length; k++) adj.push([]);
+  for (var b in buckets) {
+    var lst = buckets[b];
+    for (var a = 0; a < lst.length; a++)
+      for (var c = a + 1; c < lst.length; c++) {
+        adj[lst[a]].push(lst[c]);
+        adj[lst[c]].push(lst[a]);
       }
   }
   return adj;
@@ -140,15 +138,20 @@ function buildAdj() {
 function bfsFrom(src) {
   var dist = [];
   for (var i = 0; i < WORDS.length; i++) dist.push(-1);
-  var q = [src]; dist[src] = 0;
-  while (q.length) {
-    var cur = q.shift();
-    var nbs = ADJ[cur];
-    for (var j = 0; j < nbs.length; j++)
-      if (dist[nbs[j]] < 0) { dist[nbs[j]] = dist[cur] + 1; q.push(nbs[j]); }
+  dist[src] = 0;
+  var q = [src];
+  var head = 0;
+  while (head < q.length) {
+    var cur = q[head++];
+    for (var j = 0; j < ADJ[cur].length; j++) {
+      var n = ADJ[cur][j];
+      if (dist[n] === -1) { dist[n] = dist[cur] + 1; q.push(n); }
+    }
   }
   return dist;
 }
+function hamming(a, b) { var d = 0; for (var i = 0; i < 4; i++) if (a[i] !== b[i]) d++; return d; }
+
 var ADJ = buildAdj();
 var DIST = bfsFrom(IDX[GOAL]);
 var COMMON_SET = new Set(COMMON_RAW.trim().split(/\s+/));
@@ -162,7 +165,6 @@ function pad2(n) { return (n < 10 ? "0" : "") + n; }
 var dateKey = now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
 var START = CANDIDATES[dayIndex % CANDIDATES.length];
 var OPTIMAL = DIST[IDX[START]];
-
 var SAVE_KEY = "lionel-" + dateKey;
 var state = { chain: [START], won: false };
 try {
@@ -171,17 +173,15 @@ try {
 } catch (e) {}
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
 
+document.getElementById("dayline").textContent =
+  "Défi du " + pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() +
+  " · LION est à " + OPTIMAL + " mots";
+
 var guess = "";
 var board = document.getElementById("board");
 var mainEl = document.getElementById("main");
 var msgEl = document.getElementById("msg");
 var msgTimer = null;
-
-document.getElementById("dayline").textContent =
-  "Défi du " + pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() +
-  " · LION est à " + OPTIMAL + " mots";
-
-function hamming(a, b) { var d = 0; for (var i = 0; i < 4; i++) if (a[i] !== b[i]) d++; return d; }
 
 function rowEl(word, cls) {
   var row = document.createElement("div");
@@ -202,6 +202,17 @@ function activeRowEl() {
   for (var i = 0; i < 4; i++) {
     var c = document.createElement("div");
     c.className = "cell";
+    row.appendChild(c);
+  }
+  return row;
+}
+function refreshActive() {
+  var row = document.getElementById("activeRow");
+  if (!row) return;
+  row.innerHTML = "";
+  for (var i = 0; i < 4; i++) {
+    var c = document.createElement("div");
+    c.className = "cell";
     if (guess[i]) {
       c.textContent = guess[i];
       c.classList.add("filled");
@@ -209,14 +220,12 @@ function activeRowEl() {
     }
     row.appendChild(c);
   }
-  return row;
 }
 function render(animateLast) {
   board.innerHTML = "";
   for (var i = 0; i < state.chain.length; i++) {
     var w = state.chain[i];
-    var cls = "done";
-    if (i === 0) cls += " start";
+    var cls = i === 0 ? "start" : "done";
     if (w === GOAL) cls += " lion";
     var row = rowEl(w, cls);
     if (animateLast && i === state.chain.length - 1 && state.chain.length > 1) {
@@ -228,23 +237,6 @@ function render(animateLast) {
   }
   if (!state.won) board.appendChild(activeRowEl());
   mainEl.scrollTop = mainEl.scrollHeight;
-}
-function refreshActive() {
-  var row = document.getElementById("activeRow");
-  if (!row) return;
-  var cells = row.children;
-  for (var i = 0; i < 4; i++) {
-    var c = cells[i];
-    if (guess[i]) {
-      c.textContent = guess[i];
-      c.classList.add("filled");
-      if (guess[i] === GOAL[i]) c.classList.add("hint");
-      else c.classList.remove("hint");
-    } else {
-      c.textContent = "";
-      c.classList.remove("filled", "hint");
-    }
-  }
 }
 function type(l) {
   if (state.won || guess.length >= 4) return;
@@ -258,6 +250,7 @@ function erase() {
 }
 function err(t) {
   msgEl.textContent = t;
+  msgEl.classList.remove("good");
   msgEl.classList.add("show");
   var row = document.getElementById("activeRow");
   if (row) { row.classList.remove("shake"); void row.offsetWidth; row.classList.add("shake"); }
@@ -277,6 +270,22 @@ function submit() {
   if (w === GOAL) { render(false); win(); }
   else render(true);
 }
+function optimalPath() {
+  var path = [START];
+  var cur = START;
+  var guard = 0;
+  while (cur !== GOAL && guard++ < 30) {
+    var ci = IDX[cur];
+    var next = null;
+    for (var k = 0; k < ADJ[ci].length; k++) {
+      if (DIST[ADJ[ci][k]] === DIST[ci] - 1) { next = WORDS[ADJ[ci][k]]; break; }
+    }
+    if (!next) break;
+    cur = next;
+    path.push(cur);
+  }
+  return path;
+}
 function win() {
   state.won = true;
   save();
@@ -284,6 +293,8 @@ function win() {
   var steps = state.chain.length - 1;
   document.getElementById("winText").textContent =
     START + " → LION en " + steps + " coups · optimal : " + OPTIMAL;
+  document.getElementById("optPath").textContent =
+    "Le chemin optimal : " + optimalPath().join(" → ");
   setTimeout(function() { document.getElementById("winOverlay").classList.add("show"); }, 1000);
 }
 function share(btn) {
@@ -292,6 +303,14 @@ function share(btn) {
   function done() { btn.textContent = "Copié !"; setTimeout(function() { btn.textContent = "Partager"; }, 1500); }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(done, function() {});
+  } else {
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
   }
 }
 function confetti() {
@@ -315,11 +334,16 @@ function confetti() {
     var alive = false;
     for (var i = 0; i < parts.length; i++) {
       var p = parts[i];
-      p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vy += 0.03;
-      if (p.y < c.height + 30) alive = true;
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-      ctx.fillStyle = p.col; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-      ctx.restore();
+      p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.r += p.vr;
+      if (p.y < c.height + 30) {
+        alive = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.fillStyle = p.col;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
     }
     if (alive && t - t0 < 6000) requestAnimationFrame(frame);
     else ctx.clearRect(0, 0, c.width, c.height);
@@ -346,12 +370,14 @@ KROWS.forEach(function(rowKeys) {
   });
   kb.appendChild(r);
 });
+
 document.addEventListener("keydown", function(e) {
   if (e.key === "Enter") { submit(); return; }
   if (e.key === "Backspace") { erase(); return; }
   var l = e.key.toUpperCase();
   if (/^[A-Z]$/.test(l) && l.length === 1) type(l);
 });
+
 setInterval(function() {
   var d = new Date();
   var dk = d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
@@ -360,8 +386,9 @@ setInterval(function() {
 
 render(false);
 if (state.won) {
-  msgEl.textContent = "🦁 Trouvé en " + (state.chain.length - 1) + " coups ! Reviens demain.";
-  msgEl.classList.add("show", "good");
+  msgEl.textContent = "Solution optimale : " + optimalPath().join(" → ");
+  msgEl.classList.add("show");
+  msgEl.classList.add("good");
 }
 </script>
 </body>
