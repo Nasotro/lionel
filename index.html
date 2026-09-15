@@ -78,6 +78,24 @@ main { flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items
 button.btn { padding:11px 18px; border-radius:10px; border:none; font-weight:700; font-size:14px; cursor:pointer; }
 .btn.share { background:var(--gold); color:#1a1300; }
 .btn.ok { background:var(--border); color:var(--text); }
+
+#loreModal {
+  position:fixed; inset:0; z-index:100;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(5,8,18,.95);
+}
+#loreModal.show { display:flex; }
+.loreCard {
+  background:var(--panel); border:2px solid var(--gold); border-radius:20px;
+  padding:28px; text-align:center; max-width:min(92vw, 420px); margin:0 12px;
+  box-shadow:0 0 60px rgba(251,191,36,.3);
+  animation:cardin .45s cubic-bezier(.2,1.4,.4,1) both;
+}
+.loreCard h2 { font-size:28px; margin-bottom:16px; color:var(--gold); }
+.loreCard .loreText { font-size:15px; line-height:1.7; opacity:.95; margin-bottom:24px; }
+.loreCard .loreText .lion-name { color:var(--gold); font-weight:800; font-size:1.1em; }
+.loreCard .btn { padding:12px 24px; background:var(--gold); color:#1a1300; border:none; border-radius:10px; font-weight:700; cursor:pointer; }
+.loreCard .btn:hover { background:#f59e0b; }
 </style>
 </head>
 <body>
@@ -92,6 +110,31 @@ button.btn { padding:11px 18px; border-radius:10px; border:none; font-weight:700
 </main>
 <div id="keyboard"></div>
 <canvas id="fx"></canvas>
+
+<div id="loreModal">
+  <div class="loreCard">
+    <h2>⚜️  La Légende de Lionel ⚜️</h2>
+    <div class="loreText">
+      Je suis <span class="lion-name">Lionel</span>, gardien de la savane des mots et roi des énigmes. 🦁
+      <br><br>
+      Pour prouver ta valeur, tu dois retrouver mon nom sacré en partant du mot du jour.
+      <br><br>
+      <strong>Les règles sont simples :</strong>
+      <br>
+      • Un mot de 4 lettres à la fois
+      <br>
+      • Chaque mot doit différer du précédent d'<em>une seule lettre</em>
+      <br>
+      • Tous les mots doivent exister dans mon dictionnaire royal
+      <br>
+      • Les lettres à la bonne place brillent en <span style="color:var(--gold)">or</span>
+      <br><br>
+      À toi de jouer, aventurier·e !
+    </div>
+    <button class="btn" onclick="closeLore()">C'est parti !</button>
+  </div>
+</div>
+
 <div id="winOverlay">
   <div class="winCard">
     <h2>Victoire !</h2>
@@ -104,6 +147,7 @@ button.btn { padding:11px 18px; border-radius:10px; border:none; font-weight:700
     </div>
   </div>
 </div>
+
 <script src="words.js"></script>
 <script>
 "use strict";
@@ -182,6 +226,16 @@ var board = document.getElementById("board");
 var mainEl = document.getElementById("main");
 var msgEl = document.getElementById("msg");
 var msgTimer = null;
+
+function closeLore() {
+  document.getElementById("loreModal").classList.remove("show");
+  localStorage.setItem("lionel-seen-lore", "true");
+}
+
+// Show lore modal on first visit
+if (!localStorage.getItem("lionel-seen-lore")) {
+  document.getElementById("loreModal").classList.add("show");
+}
 
 function rowEl(word, cls) {
   var row = document.createElement("div");
