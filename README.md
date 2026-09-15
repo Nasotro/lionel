@@ -9,6 +9,7 @@ Jeu de mots quotidien : rejoins le mot **LION** en changeant une seule lettre à
 - Les lettres à la bonne place (celles de LION) s'affichent en doré
 - Le score final compare ton nombre de coups au chemin optimal
 - À la victoire, le chemin optimal (plus court chemin vers LION) est révélé
+- Une popup d'introduction avec le lore de Lionel apparaît au premier lancement
 
 ## Jouer
 - Ouvrir index.html dans un navigateur, ou
